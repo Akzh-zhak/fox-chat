@@ -267,7 +267,73 @@ document.getElementById("foxLogin").onclick = async function() {
   const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
   msg.textContent = error ? error.message : "Ты успешно вошла в FOX CHAT!";
 };
+</script>if (!error) {
+  document.getElementById("foxProfile").style.display = "block";
+  const { data: userData } = await supabaseClient
+    .from("profiles")
+    .select("username, avatar_url")
+    .eq("id", data.user.id)
+    .maybeSingle();
+
+  if (userData) {
+    document.getElementById("foxUsername").value = userData.username || "";
+    if (userData.avatar_url) {
+      document.getElementById("foxAvatarPreview").src = userData.avatar_url;
+    }
+  }
+}
+  
+<section id="foxProfile" style="display:none;max-width:380px;margin:20px auto;padding:24px;background:#171717;color:white;border-radius:18px;text-align:center;font-family:Arial">
+  <h2>🐺 Мой профиль</h2>
+  <img id="foxAvatarPreview" alt="Аватар" src="https://placehold.co/120x120/292929/ffffff?text=FOX" style="width:120px;height:120px;border-radius:50%;object-fit:cover">
+  <p><input id="foxAvatarFile" type="file" accept="image/*"></p>
+  <p><input id="foxUsername" maxlength="24" placeholder="Придумай себе ник" style="padding:12px;width:85%;border-radius:8px"></p>
+  <button id="foxSaveProfile" type="button" style="padding:12px 20px;background:#ff6b35;color:white;border:0;border-radius:8px">Сохранить профиль</button>
+  <p id="foxProfileMessage"></p>
+</section>
+<script>
+const foxProfile = document.getElementById("foxProfile");
+const foxAvatarFile = document.getElementById("foxAvatarFile");
+const foxAvatarPreview = document.getElementById("foxAvatarPreview");
+let foxAvatarData = "";
+
+foxAvatarFile.onchange = function() {
+  const file = this.files[0];
+  if (!file) return;
+  if (file.size > 2 * 1024 * 1024) {
+    document.getElementById("foxProfileMessage").textContent = "Выбери фото до 2 МБ.";
+    this.value = "";
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = () => {
+    foxAvatarData = reader.result;
+    foxAvatarPreview.src = foxAvatarData;
+  };
+  reader.readAsDataURL(file);
+};
+
+document.getElementById("foxSaveProfile").onclick = async function() {
+  const msg = document.getElementById("foxProfileMessage");
+  const { data: auth } = await supabaseClient.auth.getUser();
+  if (!auth.user) {
+    msg.textContent = "Сначала войди в аккаунт.";
+    return;
+  }
+  const username = document.getElementById("foxUsername").value.trim();
+  if (username.length < 3) {
+    msg.textContent = "Ник должен содержать минимум 3 символа.";
+    return;
+  }
+  const { error } = await supabaseClient.from("profiles").upsert({
+    id: auth.user.id,
+    username: username,
+    avatar_url: foxAvatarData || null,
+    updated_at: new Date().toISOString()
+  });
+  msg.textContent = error ? error.message : "Профиль сохранён!";
+};
 </script>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              </body>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                </body>
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         </html>
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         

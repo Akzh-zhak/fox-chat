@@ -238,6 +238,36 @@ document.getElementById("foxLogin").addEventListener("click", async function () 
   }
 });
 </script>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             
+<section style="max-width:380px;margin:30px auto;padding:24px;background:#171717;color:white;border-radius:18px;font-family:Arial;text-align:center">
+  <h1>🐺 FOX CHAT</h1>
+  <p>Твоё общение. Твои правила.</p>
+  <input id="foxEmail" type="email" placeholder="Электронная почта" style="width:90%;padding:12px;margin:8px 0;border-radius:8px;border:0">
+  <input id="foxPassword" type="password" placeholder="Пароль (минимум 6 символов)" style="width:90%;padding:12px;margin:8px 0;border-radius:8px;border:0">
+  <button id="foxRegister" type="button" style="padding:12px;margin:8px;background:#ff6b35;color:white;border:0;border-radius:8px">Регистрация</button>
+  <button id="foxLogin" type="button" style="padding:12px;margin:8px;background:#333;color:white;border:0;border-radius:8px">Войти</button>
+  <p id="foxMessage">Добро пожаловать!</p>
+</section>
+<script>
+document.getElementById("foxRegister").onclick = async function() {
+  const email = document.getElementById("foxEmail").value.trim();
+  const password = document.getElementById("foxPassword").value;
+  const msg = document.getElementById("foxMessage");
+  if (!email || password.length < 6) {
+    msg.textContent = "Введи email и пароль от 6 символов.";
+    return;
+  }
+  const { error } = await supabaseClient.auth.signUp({ email, password });
+  msg.textContent = error ? error.message : "Регистрация отправлена! Проверь почту.";
+};
+document.getElementById("foxLogin").onclick = async function() {
+  const email = document.getElementById("foxEmail").value.trim();
+  const password = document.getElementById("foxPassword").value;
+  const msg = document.getElementById("foxMessage");
+  const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+  msg.textContent = error ? error.message : "Ты успешно вошла в FOX CHAT!";
+};
+</script>
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               </body>
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         </html>
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         

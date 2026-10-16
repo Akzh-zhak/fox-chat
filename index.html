@@ -193,6 +193,68 @@ const SUPABASE_URL = "https://iolfsqfezirkkbvinlxm.supabase.co/rest/v1/";
 const SUPABASE_KEY = "sb_publishable_sGP3OasqY0uzBhT6RFXDOw_wNigMiVl";
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 </script>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             
+<section style="max-width:400px;margin:30px auto;padding:20px;background:#1e1e2f;color:white;border-radius:16px;font-family:Arial;text-align:center;">
+  <h2>🐺 FOX CHAT</h2>
+  <h3>Регистрация и вход</h3>
+
+  <input id="foxEmail" type="email" placeholder="Твой email" style="width:90%;padding:12px;margin:8px 0;box-sizing:border-box;" />
+
+  <input id="foxPassword" type="password" placeholder="Пароль (от 6 символов)" style="width:90%;padding:12px;margin:8px 0;box-sizing:border-box;" />
+
+  <button id="foxRegister" type="button" style="padding:12px;margin:8px;background:#8b5cf6;color:white;border:0;border-radius:8px;">
+    Зарегистрироваться
+  </button>
+
+  <button id="foxLogin" type="button" style="padding:12px;margin:8px;background:#333;color:white;border:0;border-radius:8px;">
+    Войти
+  </button>
+
+  <p id="foxMessage">Создай аккаунт или войди в свой.</p>
+</section>
+
+<script>
+document.getElementById("foxRegister").addEventListener("click", async function () {
+  const email = document.getElementById("foxEmail").value.trim();
+  const password = document.getElementById("foxPassword").value;
+  const message = document.getElementById("foxMessage");
+
+  if (!email || password.length < 6) {
+    message.textContent = "Введи email и пароль минимум из 6 символов.";
+    return;
+  }
+
+  try {
+    const { data, error } = await supabaseClient.auth.signUp({
+      email: email,
+      password: password
+    });
+    if (error) throw error;
+    message.textContent = data.session
+      ? "Регистрация успешна! Ты вошла в аккаунт."
+      : "Аккаунт создан! Проверь почту для подтверждения.";
+  } catch (error) {
+    message.textContent = "Ошибка: " + error.message;
+  }
+});
+
+document.getElementById("foxLogin").addEventListener("click", async function () {
+  const email = document.getElementById("foxEmail").value.trim();
+  const password = document.getElementById("foxPassword").value;
+  const message = document.getElementById("foxMessage");
+
+  try {
+    const { error } = await supabaseClient.auth.signInWithPassword({
+      email: email,
+      password: password
+    });
+    if (error) throw error;
+    message.textContent = "Ты успешно вошла в FOX CHAT!";
+  } catch (error) {
+    message.textContent = "Ошибка: " + error.message;
+  }
+});
+</script>
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               </body>
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         </html>
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         

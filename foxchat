@@ -1,1 +1,224 @@
 
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FOX CHAT</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#0c0c0f;color:#f7f7f7;font-family:Arial,sans-serif;min-height:100vh}
+header{padding:22px;text-align:center;border-bottom:1px solid #292929}
+.logo{font-size:29px;font-weight:900;letter-spacing:3px}
+.logo span{color:#ff702e}
+.tag{color:#999;font-size:13px;margin-top:8px}
+main{width:100%;max-width:440px;margin:28px auto;padding:16px}
+.panel{background:#17171c;border:1px solid #2b2b32;border-radius:20px;padding:24px}
+h2{margin-top:0;font-size:23px}
+p{color:#aaa;line-height:1.5}
+input{width:100%;padding:14px;margin:7px 0 13px;border:1px solid #393941;border-radius:10px;background:#101014;color:white;font-size:15px}
+button{width:100%;padding:14px;margin:6px 0;border:0;border-radius:10px;background:#ff702e;color:#fff;font-weight:bold;font-size:15px}
+button.secondary{background:#292930}
+button:disabled{opacity:.5}
+.note{font-size:13px;overflow-wrap:anywhere}
+#profile{display:none}
+#avatar{width:108px;height:108px;border-radius:50%;object-fit:cover;border:3px solid #ff702e;background:#292930}
+.center{text-align:center}
+label{font-size:13px;color:#bbb}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">FOX <span>CHAT</span> 🐺</div>
+  <div class="tag">Твоё общение. Твои правила.</div>
+</header>
+
+<main>
+<section class="panel" id="auth">
+  <h2>Добро пожаловать!</h2>
+  <p>Войди в аккаунт или создай новый.</p>
+  <label for="email">Электронная почта</label>
+  <input id="email" type="email" placeholder="you@example.com" autocomplete="email">
+  <label for="password">Пароль</label>
+  <input id="password" type="password" placeholder="Минимум 6 символов" autocomplete="current-password">
+  <button id="login">Войти</button>
+  <button id="register" class="secondary">Создать аккаунт</button>
+  <p id="authMessage" class="note" aria-live="polite"></p>
+</section>
+
+<section class="panel" id="profile">
+  <div class="center">
+    <h2>Мой профиль</h2>
+    <img id="avatar" alt="Аватар профиля" src="https://placehold.co/120x120/292930/ffffff?text=FOX">
+    <p id="userEmail" class="note"></p>
+  </div>
+  <label for="username">Твой ник</label>
+  <input id="username" maxlength="24" placeholder="Придумай ник">
+  <label for="avatarFile">Аватар из галереи</label>
+  <input id="avatarFile" type="file" accept="image/*">
+  <button id="saveProfile">Сохранить профиль</button>
+  <button id="logout" class="secondary">Выйти из аккаунта</button>
+  <p id="profileMessage" class="note" aria-live="polite"></p>
+</section>
+</main>
+
+<script>
+const SUPABASE_URL = "https://iolfsqfezirkkbvinlxm.supabase.co";
+const SUPABASE_KEY = "sb_publishable_sGP3OasqY0uzBhT6RFXDOw_wNigMiVl";
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const el = id => document.getElementById(id);
+let avatarData = null;
+
+function message(id, text) {
+  el(id).textContent = text;
+}
+
+function showProfile(show) {
+  el("auth").style.display = show ? "none" : "block";
+  el("profile").style.display = show ? "block" : "none";
+}
+
+async function loadProfile(user) {
+  showProfile(true);
+  el("userEmail").textContent = user.email || "";
+  message("profileMessage", "Загружаем профиль…");
+
+  const { data, error } = await supabaseClient
+    .from("profiles")
+    .select("username, avatar_url")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  if (error) {
+    message("profileMessage", "Не удалось загрузить профиль: " + error.message);
+    return;
+  }
+
+  el("username").value = data?.username || "";
+  avatarData = data?.avatar_url || null;
+  el("avatar").src = avatarData || "https://placehold.co/120x120/292930/ffffff?text=FOX";
+  message("profileMessage", "");
+}
+
+el("register").onclick = async () => {
+  const email = el("email").value.trim();
+  const password = el("password").value;
+  if (!email || password.length < 6) {
+    message("authMessage", "Введи email и пароль не короче 6 символов.");
+    return;
+  }
+
+  message("authMessage", "Регистрируем аккаунт…");
+  const { data, error } = await supabaseClient.auth.signUp({ email, password });
+
+  if (error) {
+    message("authMessage", error.message);
+  } else if (data.session && data.user) {
+    message("authMessage", "Аккаунт создан!");
+    await loadProfile(data.user);
+  } else {
+    message("authMessage", "Регистрация отправлена. Проверь почту и подтверди email, затем войди.");
+  }
+};
+
+el("login").onclick = async () => {
+  const email = el("email").value.trim();
+  const password = el("password").value;
+  if (!email || !password) {
+    message("authMessage", "Введи email и пароль.");
+    return;
+  }
+
+  message("authMessage", "Входим…");
+  const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+
+  if (error) {
+    message("authMessage", error.message);
+  } else {
+    message("authMessage", "");
+    await loadProfile(data.user);
+  }
+};
+
+el("avatarFile").onchange = async () => {
+  const file = el("avatarFile").files[0];
+  if (!file) return;
+  if (!file.type.startsWith("image/")) {
+    message("profileMessage", "Выбери файл изображения.");
+    return;
+  }
+
+  message("profileMessage", "Обрабатываем аватар…");
+  try {
+    const image = new Image();
+    const source = URL.createObjectURL(file);
+    image.src = source;
+    await image.decode();
+
+    const canvas = document.createElement("canvas");
+    canvas.width = 256;
+    canvas.height = 256;
+    const ctx = canvas.getContext("2d");
+    const scale = Math.max(256 / image.width, 256 / image.height);
+    const width = image.width * scale;
+    const height = image.height * scale;
+    ctx.drawImage(image, (256 - width) / 2, (256 - height) / 2, width, height);
+
+    avatarData = canvas.toDataURL("image/jpeg", 0.72);
+    el("avatar").src = avatarData;
+    URL.revokeObjectURL(source);
+    message("profileMessage", "Аватар выбран. Нажми «Сохранить профиль».");
+  } catch {
+    message("profileMessage", "Не удалось открыть изображение. Выбери другое.");
+  }
+};
+
+el("saveProfile").onclick = async () => {
+  const { data: auth, error: authError } = await supabaseClient.auth.getUser();
+  if (authError || !auth.user) {
+    message("profileMessage", "Сначала войди в аккаунт.");
+    return;
+  }
+
+  const username = el("username").value.trim();
+  if (username.length < 3) {
+    message("profileMessage", "Ник должен содержать минимум 3 символа.");
+    return;
+  }
+
+  message("profileMessage", "Сохраняем профиль…");
+  const { error } = await supabaseClient.from("profiles").upsert({
+    id: auth.user.id,
+    username,
+    avatar_url: avatarData,
+    updated_at: new Date().toISOString()
+  });
+
+  message("profileMessage", error ? "Ошибка сохранения: " + error.message : "Профиль сохранён!");
+};
+
+el("logout").onclick = async () => {
+  const { error } = await supabaseClient.auth.signOut();
+  if (error) {
+    message("profileMessage", error.message);
+    return;
+  }
+  avatarData = null;
+  el("password").value = "";
+  showProfile(false);
+  message("authMessage", "Ты вышла из аккаунта.");
+};
+
+(async () => {
+  const { data } = await supabaseClient.auth.getSession();
+  if (data.session?.user) await loadProfile(data.session.user);
+})();
+
+supabaseClient.auth.onAuthStateChange((event, session) => {
+  if (event === "SIGNED_OUT") showProfile(false);
+});
+</script>
+</body>
+</html>
